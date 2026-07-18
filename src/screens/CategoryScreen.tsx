@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, font, shadow } from '../theme';
@@ -14,7 +14,7 @@ export default function CategoryScreen() {
   const nav = useNav();
   const insets = useSafeAreaInsets();
   const { location } = useApp();
-  const { categories, services } = useData();
+  const { categories, services, refresh, refreshing } = useData();
   const id = nav.current.params?.id as string;
   const category = findCategory(categories, id);
   const list = servicesByCategory(services, id, location?.stateCode ?? null);
@@ -38,6 +38,14 @@ export default function CategoryScreen() {
         data={list}
         keyExtractor={(s) => s.id}
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            tintColor={category.color}
+            colors={[category.color]}
+          />
+        }
         ItemSeparatorComponent={() => <View style={{ height: spacing.md }} />}
         ListHeaderComponent={
           category.emergency ? (

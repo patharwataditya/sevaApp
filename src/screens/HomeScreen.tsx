@@ -7,6 +7,7 @@ import {
   Pressable,
   TextInput,
   FlatList,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -27,11 +28,21 @@ const QUICK = [
 
 const CARD_GAP = spacing.md;
 
+function timeAgo(ts: number): string {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return 'just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
 export default function HomeScreen() {
   const nav = useNav();
   const insets = useSafeAreaInsets();
   const { profile, location } = useApp();
-  const { categories, services } = useData();
+  const { categories, services, refresh, refreshing, lastSync } = useData();
   const [query, setQuery] = useState('');
 
   const stateCode = location?.stateCode ?? null;
@@ -111,7 +122,29 @@ export default function HomeScreen() {
         <ScrollView
           contentContainerStyle={{ padding: spacing.lg, paddingBottom: insets.bottom + spacing.xl }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={refresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+              title="Syncing latest services…"
+              titleColor={colors.textMuted}
+            />
+          }
         >
+          {/* Sync status */}
+          <View style={styles.syncRow}>
+            <Ionicons
+              name={refreshing ? 'sync' : 'cloud-done-outline'}
+              size={13}
+              color={colors.textFaint}
+            />
+            <Text style={styles.syncText}>
+              {refreshing ? 'Syncing…' : `Pull down to sync${lastSync ? ` · updated ${timeAgo(lastSync)}` : ''}`}
+            </Text>
+          </View>
+
           {/* Quick emergency dial */}
           <Text style={styles.sectionTitle}>Emergency — one tap to call</Text>
           <View style={styles.quickRow}>
@@ -278,6 +311,8 @@ const styles = StyleSheet.create({
     ...shadow.soft,
   },
   searchInput: { flex: 1, fontSize: font.body, color: colors.text, paddingVertical: 2 },
+  syncRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: spacing.md, marginTop: -spacing.xs },
+  syncText: { fontSize: font.tiny, color: colors.textFaint, fontWeight: '600' },
   sectionTitle: { fontSize: font.h3, fontWeight: '800', color: colors.text, marginBottom: spacing.md },
   quickRow: { flexDirection: 'row', gap: CARD_GAP },
   quick: {

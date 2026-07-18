@@ -31,6 +31,17 @@ export default function App() {
   const [editingCategory, setEditingCategory] = useState<Category | 'new' | null>(null);
   const [showSettings, setShowSettings] = useState(false);
 
+  // Theme (light/dark) — persisted, defaults to the OS preference.
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const saved = localStorage.getItem('seva.theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('seva.theme', theme);
+  }, [theme]);
+
   async function load() {
     setLoading(true);
     setError(null);
@@ -145,6 +156,13 @@ export default function App() {
           <span className={`status ${online ? 'ok' : online === false ? 'bad' : ''}`}>
             <span className="dot" /> {online == null ? 'checking' : online ? 'connected' : 'offline'}
           </span>
+          <button
+            className="btn ghost icon-btn"
+            title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+          >
+            {theme === 'dark' ? '☀' : '🌙'}
+          </button>
           <button className="btn ghost" onClick={load}>↻ Refresh</button>
           <button className="btn ghost" onClick={() => setShowSettings(true)}>⚙ Settings</button>
         </div>
