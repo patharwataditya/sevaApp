@@ -26,12 +26,30 @@ district.
    - Each service shows a description, department, **one-tap call buttons**,
      links to official apps (Play Store / App Store) and websites, and complaint portals.
 
+## Dynamic data (serverless)
+
+The directory is **dynamic** — admins add/edit/remove data without code changes.
+
+```
+Mobile app ──GET /bootstrap──▶ API Gateway ─▶ Lambda ─▶ DynamoDB ◀─ Admin web app
+   │                                                                 (local CRUD)
+   └─ caches to AsyncStorage; ships a bundled snapshot as offline fallback
+```
+
+- **`backend/`** — serverless API: AWS Lambda + DynamoDB + API Gateway (HTTP API),
+  deployed via `backend/deploy.sh`. See `backend/README.md`.
+- **`admin/`** — local-only Vite/React dashboard for CRUD. `npm run dev`. See
+  `admin/README.md`.
+- The mobile app fetches from the API, **caches to AsyncStorage**, and keeps the
+  bundled `src/data/services.ts` as an **offline fallback** so emergency numbers
+  always work with no network. Live data wins when available.
+
 ## Data / scope model
 
 Services are tagged `national` (shown everywhere) or state-scoped (e.g. `MH` for
 Maharashtra). **Maharashtra is fully populated** using the provided directory;
-users in other states still get all pan-India services. Add more states by tagging
-services with the relevant state code in `src/data/services.ts`.
+users in other states still get all pan-India services. Add coverage for any state
+from the admin app by setting a service's **scope** (no code changes needed).
 
 ## Tech
 
@@ -46,16 +64,24 @@ services with the relevant state code in `src/data/services.ts`.
 ```
 App.tsx                     Root: providers + screen router
 src/
+  config.ts                 Public API URL + refresh interval
   theme.ts                  Design tokens (colors, spacing, shadows)
-  context/AppContext.tsx    Profile + location state, persisted locally
+  context/
+    AppContext.tsx          Profile + location state, persisted locally
+    DataContext.tsx         Live data: API fetch + AsyncStorage cache + fallback
   navigation/Nav.tsx        Minimal stack navigator (+ Android back button)
   data/
-    services.ts             Categories + service directory + search
+    services.ts             Types + bundled fallback/seed data
+    logic.ts                Pure query helpers (filter by state, search)
+    api.ts                  Backend client (GET /bootstrap)
     states.ts               Indian states/UTs + geocode matching
   utils/actions.ts          tel: dialing, link opening, number formatting
   components/                CallButton, Header
   screens/                   Welcome, Location, Signup, Home, Category,
                              ServiceDetail, Profile
+
+backend/                    Serverless API (Lambda + DynamoDB + API Gateway)
+admin/                      Local-only Vite/React admin dashboard
 ```
 
 ## Run it

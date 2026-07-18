@@ -13,7 +13,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, font, shadow } from '../theme';
 import { useNav } from '../navigation/Nav';
 import { useApp } from '../context/AppContext';
-import { categories, searchServices, servicesForState, Service } from '../data/services';
+import { Service } from '../data/services';
+import { searchServices, servicesForState } from '../data/logic';
+import { useData } from '../context/DataContext';
 import { callNumber, prettyNumber } from '../utils/actions';
 
 const QUICK = [
@@ -29,22 +31,26 @@ export default function HomeScreen() {
   const nav = useNav();
   const insets = useSafeAreaInsets();
   const { profile, location } = useApp();
+  const { categories, services } = useData();
   const [query, setQuery] = useState('');
 
   const stateCode = location?.stateCode ?? null;
   const isFemale = profile?.gender === 'female';
 
-  const results = useMemo(() => searchServices(query, stateCode), [query, stateCode]);
+  const results = useMemo(
+    () => searchServices(services, query, stateCode),
+    [services, query, stateCode]
+  );
   const searching = query.trim().length > 0;
 
   const femaleService = useMemo(
     () =>
       isFemale
-        ? servicesForState(stateCode).find(
+        ? servicesForState(services, stateCode).find(
             (s) => s.femaleOnly && (s.scope === stateCode || s.scope === 'national')
           )
         : undefined,
-    [isFemale, stateCode]
+    [services, isFemale, stateCode]
   );
 
   const firstName = profile?.name?.split(' ')[0] ?? 'there';

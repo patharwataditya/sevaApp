@@ -3,6 +3,7 @@ import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider, useApp } from './src/context/AppContext';
+import { DataProvider } from './src/context/DataContext';
 import { NavProvider, useNav, Route } from './src/navigation/Nav';
 import { colors } from './src/theme';
 
@@ -55,7 +56,9 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar style="light" />
       <AppProvider>
-        <Root />
+        <DataProvider>
+          <Root />
+        </DataProvider>
       </AppProvider>
     </SafeAreaProvider>
   );

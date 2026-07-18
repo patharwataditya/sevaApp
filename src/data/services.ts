@@ -588,36 +588,7 @@ export const services: Service[] = [
   },
 ];
 
-// Helper: services visible for a given state code, respecting scope.
-export function servicesForState(stateCode: string | null): Service[] {
-  return services.filter((s) => s.scope === 'national' || s.scope === stateCode);
-}
-
-export function servicesByCategory(categoryId: string, stateCode: string | null): Service[] {
-  return servicesForState(stateCode).filter((s) => s.categoryId === categoryId);
-}
-
-export function searchServices(query: string, stateCode: string | null): Service[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return [];
-  return servicesForState(stateCode).filter((s) => {
-    const hay = [
-      s.name,
-      s.description,
-      s.department ?? '',
-      ...(s.keywords ?? []),
-      ...(s.phones?.map((p) => p.number) ?? []),
-    ]
-      .join(' ')
-      .toLowerCase();
-    return hay.includes(q);
-  });
-}
-
-export function getCategory(id: string): Category | undefined {
-  return categories.find((c) => c.id === id);
-}
-
-export function getService(id: string): Service | undefined {
-  return services.find((s) => s.id === id);
-}
+// NOTE: `categories` and `services` above are the bundled offline fallback / seed.
+// At runtime the app prefers live data from the API (cached locally). Query helpers
+// live in ./logic.ts so they can operate on whichever dataset is active.
+// The backend seed script (backend/seed.mjs) imports these same arrays.

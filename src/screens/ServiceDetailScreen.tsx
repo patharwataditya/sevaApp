@@ -4,7 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, font, shadow } from '../theme';
 import { useNav } from '../navigation/Nav';
-import { getService, getCategory } from '../data/services';
+import { findService, findCategory } from '../data/logic';
+import { useData } from '../context/DataContext';
 import { openUrl } from '../utils/actions';
 import CallButton from '../components/CallButton';
 import Header from '../components/Header';
@@ -12,9 +13,10 @@ import Header from '../components/Header';
 export default function ServiceDetailScreen() {
   const nav = useNav();
   const insets = useSafeAreaInsets();
+  const { categories, services } = useData();
   const id = nav.current.params?.id as string;
-  const service = getService(id);
-  const category = service ? getCategory(service.categoryId) : undefined;
+  const service = findService(services, id);
+  const category = service ? findCategory(categories, service.categoryId) : undefined;
 
   if (!service) {
     return (

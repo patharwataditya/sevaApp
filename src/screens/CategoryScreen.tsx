@@ -5,7 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, font, shadow } from '../theme';
 import { useNav } from '../navigation/Nav';
 import { useApp } from '../context/AppContext';
-import { getCategory, servicesByCategory } from '../data/services';
+import { findCategory, servicesByCategory } from '../data/logic';
+import { useData } from '../context/DataContext';
 import { callNumber, prettyNumber } from '../utils/actions';
 import Header from '../components/Header';
 
@@ -13,9 +14,10 @@ export default function CategoryScreen() {
   const nav = useNav();
   const insets = useSafeAreaInsets();
   const { location } = useApp();
+  const { categories, services } = useData();
   const id = nav.current.params?.id as string;
-  const category = getCategory(id);
-  const list = servicesByCategory(id, location?.stateCode ?? null);
+  const category = findCategory(categories, id);
+  const list = servicesByCategory(services, id, location?.stateCode ?? null);
 
   if (!category) {
     return (
