@@ -23,7 +23,14 @@
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/adaptive-foreground.png"
       },
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"],
+      "package": "com.sevaapp.mobile",
+      "versionCode": 1,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -37,6 +44,12 @@
           "locationWhenInUsePermission": "SevaApp uses your location once to find the emergency numbers and government services for your state and district."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "3ed91e0a-e230-4505-ae19-bb27f5ab889d"
+      }
+    },
+    "owner": "azyx"
   }
 }
