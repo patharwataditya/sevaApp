@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { Category, Service } from './types';
+import type { Category, Service, ProfileField } from './types';
 import {
   fetchBootstrap,
   createCategory,
@@ -13,14 +13,16 @@ import {
 } from './api';
 import { ServiceForm } from './ServiceForm';
 import { CategoryForm } from './CategoryForm';
+import { ProfileFieldsPanel } from './ProfileFieldsPanel';
 import { SettingsModal } from './Settings';
 
-type Tab = 'services' | 'categories';
+type Tab = 'services' | 'categories' | 'signup';
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('services');
   const [categories, setCategories] = useState<Category[]>([]);
   const [services, setServices] = useState<Service[]>([]);
+  const [profileFields, setProfileFields] = useState<ProfileField[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [online, setOnline] = useState<boolean | null>(null);
@@ -49,6 +51,7 @@ export default function App() {
       const data = await fetchBootstrap();
       setCategories(data.categories.sort((a, b) => (a.order ?? 0) - (b.order ?? 0)));
       setServices(data.services.sort((a, b) => a.name.localeCompare(b.name)));
+      setProfileFields(data.profileFields ?? []);
       setOnline(true);
     } catch (e: any) {
       setError(e.message);
@@ -175,6 +178,9 @@ export default function App() {
         <button className={tab === 'categories' ? 'tab active' : 'tab'} onClick={() => setTab('categories')}>
           Categories <span className="count">{categories.length}</span>
         </button>
+        <button className={tab === 'signup' ? 'tab active' : 'tab'} onClick={() => setTab('signup')}>
+          Signup form <span className="count">{profileFields.length}</span>
+        </button>
       </div>
 
       {error && <div className="banner error">⚠ {error} <button onClick={load}>retry</button></div>}
@@ -217,6 +223,7 @@ export default function App() {
                 <div className="td"><span className="chip">{catName(s.categoryId)}</span></div>
                 <div className="td">
                   <span className={`chip ${s.scope === 'national' ? 'blue' : 'amber'}`}>{s.scope}</span>
+                  {s.district ? <div className="muted">{s.district}</div> : null}
                 </div>
                 <div className="td">{(s.phones ?? []).map((p) => p.number).join(', ') || '—'}</div>
                 <div className="td flags">
@@ -269,6 +276,10 @@ export default function App() {
             ))}
           </div>
         </section>
+      )}
+
+      {tab === 'signup' && !loading && (
+        <ProfileFieldsPanel value={profileFields} onSaved={setProfileFields} />
       )}
 
       {editingService && (

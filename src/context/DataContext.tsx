@@ -3,8 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   categories as bundledCategories,
   services as bundledServices,
+  profileFields as bundledProfileFields,
   Category,
   Service,
+  ProfileField,
 } from '../data/services';
 import { fetchBootstrap } from '../data/api';
 import { REFRESH_INTERVAL_MS } from '../config';
@@ -14,6 +16,7 @@ type DataSource = 'bundled' | 'cache' | 'network';
 type DataState = {
   categories: Category[];
   services: Service[];
+  profileFields: ProfileField[];
   source: DataSource;
   lastSync: number | null;
   refreshing: boolean;
@@ -30,15 +33,24 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // instantly and fully offline, even on a first launch with no network.
   const [categories, setCategories] = useState<Category[]>(bundledCategories);
   const [services, setServices] = useState<Service[]>(bundledServices);
+  const [profileFields, setProfileFields] = useState<ProfileField[]>(bundledProfileFields);
   const [source, setSource] = useState<DataSource>('bundled');
   const [lastSync, setLastSync] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const applyData = useCallback(
-    (cats: Category[], svcs: Service[], src: DataSource, syncedAt: number | null) => {
+    (
+      cats: Category[],
+      svcs: Service[],
+      fields: ProfileField[] | undefined,
+      src: DataSource,
+      syncedAt: number | null
+    ) => {
       if (Array.isArray(cats) && cats.length) setCategories(cats);
       if (Array.isArray(svcs) && svcs.length) setServices(svcs);
+      // profileFields can legitimately be empty, so only guard against non-arrays.
+      if (Array.isArray(fields)) setProfileFields(fields);
       setSource(src);
       setLastSync(syncedAt);
     },
@@ -51,7 +63,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     try {
       const data = await fetchBootstrap();
       const now = Date.now();
-      applyData(data.categories, data.services, 'network', now);
+      applyData(data.categories, data.services, data.profileFields, 'network', now);
       await AsyncStorage.setItem(
         CACHE_KEY,
         JSON.stringify({ ...data, syncedAt: now })
@@ -70,7 +82,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         const raw = await AsyncStorage.getItem(CACHE_KEY);
         if (raw) {
           const cached = JSON.parse(raw);
-          applyData(cached.categories, cached.services, 'cache', cached.syncedAt ?? null);
+          applyData(
+            cached.categories,
+            cached.services,
+            cached.profileFields,
+            'cache',
+            cached.syncedAt ?? null
+          );
           // 2) Only hit the network if the cache is stale.
           if (!cached.syncedAt || Date.now() - cached.syncedAt > REFRESH_INTERVAL_MS) {
             refresh();
@@ -87,8 +105,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo<DataState>(
-    () => ({ categories, services, source, lastSync, refreshing, error, refresh }),
-    [categories, services, source, lastSync, refreshing, error, refresh]
+    () => ({ categories, services, profileFields, source, lastSync, refreshing, error, refresh }),
+    [categories, services, profileFields, source, lastSync, refreshing, error, refresh]
   );
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

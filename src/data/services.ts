@@ -6,6 +6,9 @@
 //    selected state matches. Right now Maharashtra ("MH") is fully populated;
 //    users in other states still get the full set of national services plus a
 //    gentle note that state-specific listings are being added.
+//  - a state-scoped service can additionally target a single district (e.g.
+//    "Pune"). When `district` is set, the service only shows to users whose
+//    detected/selected district matches; otherwise it shows for the whole state.
 
 export type IoniconName = string;
 
@@ -29,10 +32,23 @@ export type Service = {
   website?: string;
   complaintUrl?: string;
   apps?: AppLink[];
-  scope: 'national' | 'MH';
+  scope: 'national' | 'MH' | string; // 'national' or a state code (e.g. 'MH')
+  district?: string; // optional: restrict a state-scoped service to one district
   emergency?: boolean; // surfaced as a one-tap dial tile
   femaleOnly?: boolean; // highlighted for users who selected "Female"
   keywords?: string[];
+};
+
+// A custom field that admins can add to the signup form without a code change.
+// These are appended below the app's built-in fields (name, gender, age, …).
+export type ProfileField = {
+  key: string; // stable storage key, e.g. "emergencyContact"
+  label: string; // shown to the user, e.g. "Emergency contact"
+  type: 'text' | 'phone' | 'number' | 'select';
+  options?: string[]; // choices when type === 'select'
+  required?: boolean;
+  placeholder?: string;
+  order?: number;
 };
 
 export type Category = {
@@ -587,6 +603,12 @@ export const services: Service[] = [
     keywords: ['job', 'employment', 'career', 'ncs', 'skill', 'work', 'rojgar'],
   },
 ];
+
+// Bundled default for the dynamic signup fields. The app always collects the
+// built-in fields (name, gender, age, phone, blood group); anything here is an
+// extra field the admin has configured. Empty by default; live data from the
+// API (see /bootstrap → profileFields) overrides this at runtime.
+export const profileFields: ProfileField[] = [];
 
 // NOTE: `categories` and `services` above are the bundled offline fallback / seed.
 // At runtime the app prefers live data from the API (cached locally). Query helpers

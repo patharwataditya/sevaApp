@@ -16,6 +16,7 @@ const empty: Service = {
   description: '',
   department: '',
   scope: 'national',
+  district: '',
   phones: [],
   apps: [],
   keywords: [],
@@ -52,6 +53,8 @@ export function ServiceForm({ value, categories, onCancel, onSave }: Props) {
       department: s.department?.trim() || undefined,
       website: s.website?.trim() || undefined,
       complaintUrl: s.complaintUrl?.trim() || undefined,
+      // District only applies to state-scoped services.
+      district: s.scope !== 'national' ? s.district?.trim() || undefined : undefined,
     };
     onSave(clean);
   }
@@ -84,6 +87,17 @@ export function ServiceForm({ value, categories, onCancel, onSave }: Props) {
               {STATES.map((st) => <option key={st.code} value={st.code}>{st.name}</option>)}
             </select>
           </label>
+
+          {s.scope !== 'national' && (
+            <label className="full">
+              <span>District (optional — leave blank to cover the whole state)</span>
+              <input
+                value={s.district ?? ''}
+                onChange={(e) => set({ district: e.target.value })}
+                placeholder="e.g. Pune"
+              />
+            </label>
+          )}
 
           <label className="full">
             <span>Description *</span>

@@ -9,6 +9,8 @@ export type UserProfile = {
   ageGroup: string; // e.g. "18-25"
   phone?: string;
   bloodGroup?: string;
+  // Answers to admin-defined custom signup fields, keyed by field.key.
+  custom?: Record<string, string>;
 };
 
 export type LocationInfo = {

@@ -5,12 +5,23 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, font, shadow } from '../theme';
 import { useNav } from '../navigation/Nav';
 import { useApp } from '../context/AppContext';
+import { useData } from '../context/DataContext';
 import Header from '../components/Header';
 
 export default function ProfileScreen() {
   const nav = useNav();
   const insets = useSafeAreaInsets();
   const { profile, location, resetAll } = useApp();
+  const { profileFields } = useData();
+
+  const customRows = [...profileFields]
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .filter((f) => (profile?.custom?.[f.key] ?? '').trim())
+    .map((f) => ({
+      icon: 'ellipse-outline',
+      label: f.label,
+      value: profile!.custom![f.key],
+    }));
 
   const rows: { icon: string; label: string; value?: string }[] = [
     { icon: 'person', label: 'Name', value: profile?.name },
@@ -23,6 +34,7 @@ export default function ProfileScreen() {
       label: 'Location',
       value: [location?.district, location?.stateName].filter(Boolean).join(', ') || '—',
     },
+    ...customRows,
   ];
 
   function confirmReset() {

@@ -15,7 +15,7 @@ import { colors, spacing, radius, font, shadow } from '../theme';
 import { useNav } from '../navigation/Nav';
 import { useApp } from '../context/AppContext';
 import { Service } from '../data/services';
-import { searchServices, servicesForState } from '../data/logic';
+import { searchServices, servicesForLocation } from '../data/logic';
 import { useData } from '../context/DataContext';
 import { callNumber, prettyNumber } from '../utils/actions';
 
@@ -46,22 +46,21 @@ export default function HomeScreen() {
   const [query, setQuery] = useState('');
 
   const stateCode = location?.stateCode ?? null;
+  const district = location?.district ?? null;
   const isFemale = profile?.gender === 'female';
 
   const results = useMemo(
-    () => searchServices(services, query, stateCode),
-    [services, query, stateCode]
+    () => searchServices(services, query, stateCode, district),
+    [services, query, stateCode, district]
   );
   const searching = query.trim().length > 0;
 
   const femaleService = useMemo(
     () =>
       isFemale
-        ? servicesForState(services, stateCode).find(
-            (s) => s.femaleOnly && (s.scope === stateCode || s.scope === 'national')
-          )
+        ? servicesForLocation(services, stateCode, district).find((s) => s.femaleOnly)
         : undefined,
-    [services, isFemale, stateCode]
+    [services, isFemale, stateCode, district]
   );
 
   const firstName = profile?.name?.split(' ')[0] ?? 'there';

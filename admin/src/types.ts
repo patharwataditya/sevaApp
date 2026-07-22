@@ -19,10 +19,24 @@ export type Service = {
   complaintUrl?: string;
   apps?: AppLink[];
   scope: string; // 'national' | state code e.g. 'MH'
+  district?: string; // optional: restrict a state-scoped service to one district
   emergency?: boolean;
   femaleOnly?: boolean;
   keywords?: string[];
   updatedAt?: string;
+};
+
+// A custom field appended to the mobile app's signup form.
+export type ProfileFieldType = 'text' | 'phone' | 'number' | 'select';
+
+export type ProfileField = {
+  key: string;
+  label: string;
+  type: ProfileFieldType;
+  options?: string[];
+  required?: boolean;
+  placeholder?: string;
+  order?: number;
 };
 
 export type Category = {

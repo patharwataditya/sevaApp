@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, spacing, radius, font, shadow } from '../theme';
 import { useNav } from '../navigation/Nav';
 import { useApp, Gender } from '../context/AppContext';
+import { useData } from '../context/DataContext';
+import { ProfileField } from '../data/services';
 import Header from '../components/Header';
 
 const GENDERS: { key: Gender; label: string; icon: string }[] = [
@@ -29,25 +31,48 @@ export default function SignupScreen() {
   const nav = useNav();
   const insets = useSafeAreaInsets();
   const { saveProfile, completeOnboarding, location } = useApp();
+  const { profileFields } = useData();
+
+  // Admin-defined extra fields, ordered.
+  const customFields = React.useMemo(
+    () => [...profileFields].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
+    [profileFields]
+  );
 
   const [name, setName] = useState('');
   const [gender, setGender] = useState<Gender | null>(null);
   const [ageGroup, setAgeGroup] = useState<string | null>(null);
   const [phone, setPhone] = useState('');
   const [bloodGroup, setBloodGroup] = useState<string | null>(null);
+  const [custom, setCustom] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState(false);
 
-  const valid = name.trim().length >= 2 && gender && ageGroup;
+  const setCustomValue = (key: string, value: string) =>
+    setCustom((prev) => ({ ...prev, [key]: value }));
+
+  const missingCustom = (f: ProfileField) => f.required && !(custom[f.key] ?? '').trim();
+
+  const valid =
+    name.trim().length >= 2 &&
+    !!gender &&
+    !!ageGroup &&
+    !customFields.some(missingCustom);
 
   async function finish() {
     setTouched(true);
     if (!valid) return;
+    const cleanedCustom: Record<string, string> = {};
+    for (const f of customFields) {
+      const v = (custom[f.key] ?? '').trim();
+      if (v) cleanedCustom[f.key] = v;
+    }
     await saveProfile({
       name: name.trim(),
       gender: gender!,
       ageGroup: ageGroup!,
       phone: phone.trim() || undefined,
       bloodGroup: bloodGroup || undefined,
+      custom: Object.keys(cleanedCustom).length ? cleanedCustom : undefined,
     });
     await completeOnboarding();
     nav.reset('home');
@@ -160,6 +185,57 @@ export default function SignupScreen() {
               })}
             </View>
           </Field>
+
+          {/* Admin-defined custom fields */}
+          {customFields.map((f) => (
+            <View key={f.key}>
+              <Field label={f.label} required={f.required} optional={!f.required}>
+                {f.type === 'select' ? (
+                  <View style={styles.wrapRow}>
+                    {(f.options ?? []).map((opt) => {
+                      const active = custom[f.key] === opt;
+                      return (
+                        <Pressable
+                          key={opt}
+                          onPress={() => setCustomValue(f.key, active ? '' : opt)}
+                          style={[styles.pill, active && styles.pillActive]}
+                        >
+                          <Text style={[styles.pillText, active && { color: colors.white }]}>
+                            {opt}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ) : (
+                  <TextInput
+                    style={styles.input}
+                    placeholder={f.placeholder ?? ''}
+                    placeholderTextColor={colors.textFaint}
+                    value={custom[f.key] ?? ''}
+                    onChangeText={(t) =>
+                      setCustomValue(
+                        f.key,
+                        f.type === 'phone' || f.type === 'number'
+                          ? t.replace(/[^0-9+]/g, '')
+                          : t
+                      )
+                    }
+                    keyboardType={
+                      f.type === 'phone'
+                        ? 'phone-pad'
+                        : f.type === 'number'
+                        ? 'numeric'
+                        : 'default'
+                    }
+                  />
+                )}
+              </Field>
+              {touched && missingCustom(f) ? (
+                <Text style={styles.err}>Please fill in {f.label.toLowerCase()}.</Text>
+              ) : null}
+            </View>
+          ))}
 
           <View style={{ height: spacing.xxl }} />
         </ScrollView>

@@ -1,7 +1,11 @@
 import { API_URL } from '../config';
-import { Category, Service } from './services';
+import { Category, Service, ProfileField } from './services';
 
-export type Bootstrap = { categories: Category[]; services: Service[] };
+export type Bootstrap = {
+  categories: Category[];
+  services: Service[];
+  profileFields?: ProfileField[];
+};
 
 // Fetch the full directory in one call. Times out so a slow/absent network never
 // blocks the UI (the app falls back to cached / bundled data).

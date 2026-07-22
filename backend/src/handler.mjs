@@ -4,7 +4,8 @@
 //   GET  /                      health check
 //   GET  /categories            list all categories
 //   GET  /services              list all services
-//   GET  /bootstrap             { categories, services } in one call (used by app)
+//   GET  /config                list all config items (e.g. profileFields)
+//   GET  /bootstrap             { categories, services, profileFields } (used by app)
 //
 // Admin (requires header  x-admin-key: <ADMIN_KEY>):
 //   POST   /categories          create (body = category)         -> {item}
@@ -13,8 +14,9 @@
 //   POST   /services            create (body = service)          -> {item}
 //   PUT    /services/{id}        upsert service with that id      -> {item}
 //   DELETE /services/{id}        delete service
+//   PUT    /config/{id}          upsert a config blob (e.g. profileFields)
 //
-// DynamoDB tables are passed in via env: CATEGORIES_TABLE, SERVICES_TABLE.
+// DynamoDB tables are passed in via env: CATEGORIES_TABLE, SERVICES_TABLE, CONFIG_TABLE.
 // The admin secret is passed in via env: ADMIN_KEY.
 
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
@@ -33,7 +35,10 @@ const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}), {
 
 const CATEGORIES_TABLE = process.env.CATEGORIES_TABLE;
 const SERVICES_TABLE = process.env.SERVICES_TABLE;
+const CONFIG_TABLE = process.env.CONFIG_TABLE;
 const ADMIN_KEY = process.env.ADMIN_KEY;
+
+const PROFILE_FIELDS_ID = 'profileFields';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -53,7 +58,18 @@ function json(statusCode, body) {
 function tableFor(resource) {
   if (resource === 'categories') return CATEGORIES_TABLE;
   if (resource === 'services') return SERVICES_TABLE;
+  if (resource === 'config') return CONFIG_TABLE;
   return null;
+}
+
+// Read the admin-defined custom signup fields (stored as one config item).
+async function loadProfileFields() {
+  if (!CONFIG_TABLE) return [];
+  const out = await ddb.send(
+    new GetCommand({ TableName: CONFIG_TABLE, Key: { id: PROFILE_FIELDS_ID } })
+  );
+  const fields = out.Item?.fields;
+  return Array.isArray(fields) ? fields : [];
 }
 
 async function scanAll(table) {
@@ -113,12 +129,14 @@ export const handler = async (event) => {
         return json(200, { ok: true, service: 'seva-api', time: new Date().toISOString() });
       }
       if (path === '/bootstrap') {
-        const [categories, services] = await Promise.all([
+        const [categories, services, profileFields] = await Promise.all([
           scanAll(CATEGORIES_TABLE),
           scanAll(SERVICES_TABLE),
+          loadProfileFields(),
         ]);
         categories.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-        return json(200, { categories, services });
+        profileFields.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        return json(200, { categories, services, profileFields });
       }
       if (segments.length === 1) {
         const table = tableFor(segments[0]);

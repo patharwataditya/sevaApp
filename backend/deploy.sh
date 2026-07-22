@@ -11,6 +11,7 @@ REGION="${AWS_REGION:-us-east-1}"
 PREFIX="seva"
 CATEGORIES_TABLE="${PREFIX}-categories"
 SERVICES_TABLE="${PREFIX}-services"
+CONFIG_TABLE="${PREFIX}-config"
 ROLE_NAME="${PREFIX}-api-role"
 FUNCTION_NAME="${PREFIX}-api"
 RUNTIME="nodejs20.x"
@@ -52,6 +53,7 @@ create_table() {
 echo "▶ DynamoDB"
 create_table "$CATEGORIES_TABLE"
 create_table "$SERVICES_TABLE"
+create_table "$CONFIG_TABLE"
 
 # ---- IAM role ----
 echo "▶ IAM role"
@@ -77,7 +79,8 @@ DDB_POLICY=$(cat <<JSON
     "Action": ["dynamodb:Scan","dynamodb:GetItem","dynamodb:PutItem","dynamodb:DeleteItem","dynamodb:BatchWriteItem"],
     "Resource": [
       "arn:aws:dynamodb:${REGION}:${ACCOUNT_ID}:table/${CATEGORIES_TABLE}",
-      "arn:aws:dynamodb:${REGION}:${ACCOUNT_ID}:table/${SERVICES_TABLE}"
+      "arn:aws:dynamodb:${REGION}:${ACCOUNT_ID}:table/${SERVICES_TABLE}",
+      "arn:aws:dynamodb:${REGION}:${ACCOUNT_ID}:table/${CONFIG_TABLE}"
     ]
   }]
 }
@@ -94,7 +97,7 @@ echo "▶ Packaging Lambda"
 rm -f function.zip
 ( cd src && zip -q -r ../function.zip handler.mjs )
 
-ENV_VARS="Variables={CATEGORIES_TABLE=$CATEGORIES_TABLE,SERVICES_TABLE=$SERVICES_TABLE,ADMIN_KEY=$ADMIN_KEY}"
+ENV_VARS="Variables={CATEGORIES_TABLE=$CATEGORIES_TABLE,SERVICES_TABLE=$SERVICES_TABLE,CONFIG_TABLE=$CONFIG_TABLE,ADMIN_KEY=$ADMIN_KEY}"
 
 # ---- Create or update the function ----
 echo "▶ Lambda function"
@@ -192,6 +195,7 @@ cat > "$HERE/.deploy-output.json" <<JSON
   "apiId": "$API_ID",
   "categoriesTable": "$CATEGORIES_TABLE",
   "servicesTable": "$SERVICES_TABLE",
+  "configTable": "$CONFIG_TABLE",
   "adminKey": "$ADMIN_KEY"
 }
 JSON

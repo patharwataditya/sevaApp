@@ -4,28 +4,61 @@
 
 import { Category, Service } from './services';
 
-// Services visible for a given state code: national services everywhere, plus
-// services scoped to the user's state.
-export function servicesForState(services: Service[], stateCode: string | null): Service[] {
-  return services.filter((s) => s.scope === 'national' || s.scope === stateCode);
+// Normalise a district name for lenient matching (geocoder output vs. admin
+// input can differ in case, spacing or a trailing "District").
+function normDistrict(d: string | null | undefined): string {
+  return (d ?? '')
+    .toLowerCase()
+    .replace(/\bdistrict\b/g, '')
+    .replace(/[^a-z]/g, '')
+    .trim();
+}
+
+// True if a state-scoped service's district targeting matches the user's
+// district. Services without a district target apply to the whole state.
+function districtMatches(service: Service, district: string | null): boolean {
+  if (!service.district) return true;
+  const want = normDistrict(service.district);
+  const have = normDistrict(district);
+  if (!want) return true;
+  if (!have) return false; // service is district-specific but we don't know the user's district
+  return have === want || have.includes(want) || want.includes(have);
+}
+
+// Services visible for a given location: national services everywhere, plus
+// services scoped to the user's state (optionally narrowed to their district).
+export function servicesForLocation(
+  services: Service[],
+  stateCode: string | null,
+  district: string | null = null
+): Service[] {
+  return services.filter(
+    (s) =>
+      s.scope === 'national' ||
+      (s.scope === stateCode && districtMatches(s, district))
+  );
 }
 
 export function servicesByCategory(
   services: Service[],
   categoryId: string,
-  stateCode: string | null
+  stateCode: string | null,
+  district: string | null = null
 ): Service[] {
-  return servicesForState(services, stateCode).filter((s) => s.categoryId === categoryId);
+  return servicesForLocation(services, stateCode, district).filter(
+    (s) => s.categoryId === categoryId
+  );
 }
 
 export function searchServices(
   services: Service[],
   query: string,
-  stateCode: string | null
+  stateCode: string | null,
+  district: string | null = null
 ): Service[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
-  return servicesForState(services, stateCode).filter((s) => {
+  return servicesForLocation(services, stateCode, district).filter((s) => {
     const hay = [
       s.name,
       s.description,

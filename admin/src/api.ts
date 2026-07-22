@@ -1,4 +1,4 @@
-import type { Category, Service } from './types';
+import type { Category, Service, ProfileField } from './types';
 
 // Config is read from Vite env (admin/.env.local) with a localStorage override
 // so you can change it from the UI without editing files.
@@ -36,9 +36,21 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   return data as T;
 }
 
-export async function fetchBootstrap(): Promise<{ categories: Category[]; services: Service[] }> {
+export async function fetchBootstrap(): Promise<{
+  categories: Category[];
+  services: Service[];
+  profileFields?: ProfileField[];
+}> {
   return request('GET', '/bootstrap');
 }
+
+// Signup form fields (stored as a single config blob).
+export const saveProfileFields = (fields: ProfileField[]) =>
+  request<{ item: { id: string; fields: ProfileField[] } }>(
+    'PUT',
+    '/config/profileFields',
+    { fields }
+  );
 
 // Categories
 export const createCategory = (c: Partial<Category>) =>

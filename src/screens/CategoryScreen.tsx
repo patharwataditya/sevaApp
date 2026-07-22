@@ -17,7 +17,12 @@ export default function CategoryScreen() {
   const { categories, services, refresh, refreshing } = useData();
   const id = nav.current.params?.id as string;
   const category = findCategory(categories, id);
-  const list = servicesByCategory(services, id, location?.stateCode ?? null);
+  const list = servicesByCategory(
+    services,
+    id,
+    location?.stateCode ?? null,
+    location?.district ?? null
+  );
 
   if (!category) {
     return (
@@ -76,7 +81,9 @@ export default function CategoryScreen() {
                 </View>
                 {item.scope !== 'national' ? (
                   <View style={styles.tag}>
-                    <Text style={styles.tagText}>{location?.stateName ?? 'State'}</Text>
+                    <Text style={styles.tagText}>
+                      {item.district || location?.stateName || 'State'}
+                    </Text>
                   </View>
                 ) : null}
               </View>
